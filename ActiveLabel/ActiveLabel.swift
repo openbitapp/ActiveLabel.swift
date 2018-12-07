@@ -273,15 +273,23 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
 
         let mutAttrString = addLineBreak(attributedText)
 
+        var elements: [ElementTuple] = []
         if parseText {
             clearActiveElements()
             let newString = parseTextAndExtractActiveElements(mutAttrString)
             mutAttrString.mutableString.setString(newString)
             attributedText.enumerateAttributes(in: NSRange(location: 0, length: attributedText.length), options: .longestEffectiveRangeNotRequired, using: { (attribute, range, stop) in
-                mutAttrString.addAttributes(attribute, range: range)
+                if let attributes = attribute[.link] as? String {
+                    let a = ActiveElement.create(with: .url, text: attributes)
+                    let e = ElementTuple(range, a, .url)
+                    elements.append(e)
+                } else {
+                    mutAttrString.addAttributes(attribute, range: range)
+                }
             })
         }
 
+        activeElements[.url] = elements
         addLinkAttribute(mutAttrString)
         textStorage.setAttributedString(mutAttrString)
         _customizing = true
